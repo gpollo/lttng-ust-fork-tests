@@ -1,3 +1,4 @@
 # ignore all files with no extension
 *
 !*.*
+!makefile
