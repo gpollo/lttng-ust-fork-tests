@@ -5,7 +5,7 @@
 #include <pthread.h>
 
 #ifndef THREAD_COUNT
-# define THREAD_COUNT 5
+# define THREAD_COUNT 6
 #endif
 
 #ifdef NO_LTTNG
@@ -50,6 +50,8 @@ int main()
 	int child_count = THREAD_COUNT;
 
 	getchar();
+	debug("process spawned");
+
 	for (int i = 1; i <= THREAD_COUNT; i++) {
 		pid_t pid = fork();
 		if (pid < 0) {
@@ -58,8 +60,10 @@ int main()
 		}
 
 		if (pid == 0) {
-			debug("child spawned");
+			debug("process spawned");
 			child_count = THREAD_COUNT - i;
+		} else {
+			debug("child spawned");
 		}
 	}
 
@@ -72,6 +76,8 @@ int main()
 
 		debug("child terminated");
 	}
+
+	debug("process terminated");
 
 	return 0;
 }
