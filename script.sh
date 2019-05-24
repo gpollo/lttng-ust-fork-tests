@@ -25,9 +25,10 @@ stop_tracing_session() {
 }
 
 run_fork() {
-	#echo | ./fork-preload
 	echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload
 }
+
+make
 
 start_sessiond
 start_tracing_session
