@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -o xtrace
+assert_eq() {
+	if [[ ! $2 -eq $3 ]]; then
+		echo -e "$1 should be equal: expected=$2, got=$3"
+	fi
+}
 
 start_sessiond() {
 	lttng-sessiond -vvv --verbose-consumer > sessiond.log 2> sessiond.log &
@@ -21,18 +25,40 @@ start_tracing_session() {
 
 stop_tracing_session() {
 	lttng stop
-	lttng view
 
-	(set +o xtrace;
-		echo "process spawned    = $(lttng view | grep "process spawned"    | wc -l)";
-		echo "process terminated = $(lttng view | grep "process terminated" | wc -l)";
-		echo "child spawned    = $(lttng view | grep "child spawned"    | wc -l)";
-		echo "child terminated = $(lttng view | grep "child terminated" | wc -l)";
-	)
+	TRACE_DIRECTORY=$(lttng list test | grep -i "trace output" | sed "s/.* \(\/.*\)/\1/")
+
+	babeltrace "$TRACE_DIRECTORY" > /dev/null 2> /dev/null
+	if [[ $? -eq 0 ]]; then
+		P_SPAWN=$(lttng view | grep "process spawned"    | wc -l)
+		P_TERMI=$(lttng view | grep "process terminated" | wc -l)
+		echo -e "\tProcess spawned    = $P_SPAWN";
+		echo -e "\tProcess terminated = $P_TERMI";
+
+		C_SPAWN=$(lttng view | grep "child spawned"    | wc -l)
+		C_TERMI=$(lttng view | grep "child terminated" | wc -l)
+		echo -e "\tChild spawned    = $C_SPAWN";
+		echo -e "\tChild terminated = $C_TERMI";
+	else
+		echo -e "\tMissing events in traces"
+	fi
+
+	TRACE_COUNT=$(find "$TRACE_DIRECTORY" -maxdepth 3 -mindepth 3 | wc -l)
+	echo -e "\tTrace directory = $TRACE_DIRECTORY"
+	echo -e "\tTrace count = $TRACE_COUNT"
+
+	assert_eq "\t\tProcess spawned/terminated" $P_SPAWN $P_TERMI
+	assert_eq "\t\tChild spawned/terminated" $C_SPAWN $C_TERMI
+	assert_eq "\t\tTrace count and process spawned" $TRACE_COUNT $P_SPAWN
 }
 
 run_fork() {
-	echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload $@
+	if [[ -n $USE_VALGRIND ]]; then
+		VALGRIND_OPTS="--log-file=run1.valgrind.log --leak-check=full --show-leak-kinds=all"
+		echo | LD_PRELOAD=liblttng-ust-fork.so valgrind $VALGRIND_OPTS ./fork-preload $@
+	else
+		echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload $@
+	fi
 }
 
 make
