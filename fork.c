@@ -1,11 +1,12 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <pthread.h>
 
-#ifndef THREAD_COUNT
-# define THREAD_COUNT 6
+#ifndef DEFAULT_THREAD_COUNT
+# define DEFAULT_THREAD_COUNT 6
 #endif
 
 #ifdef NO_LTTNG
@@ -41,18 +42,26 @@ void register_atfork(void)
 }
 #endif
 
-int main()
+int main(int argc, char** argv)
 {
 #ifdef TEST_PTHREAD_ATFORK
 	register_atfork();
 #endif
 
-	int child_count = THREAD_COUNT;
+	unsigned int thread_count = DEFAULT_THREAD_COUNT;
+	if (argc > 1) {
+		if(sscanf(argv[1], "%u", &thread_count) == 0) {
+			fprintf(stderr, "sscanf: failed to parse UID\n");
+			_exit(1);
+		}
+	}
+
+	unsigned int child_count = thread_count;
 
 	getchar();
 	debug("process spawned");
 
-	for (int i = 1; i <= THREAD_COUNT; i++) {
+	for (unsigned int i = 1; i <= thread_count; i++) {
 		pid_t pid = fork();
 		if (pid < 0) {
 			perror("fork() failed");
@@ -61,13 +70,13 @@ int main()
 
 		if (pid == 0) {
 			debug("process spawned");
-			child_count = THREAD_COUNT - i;
+			child_count = thread_count - i;
 		} else {
 			debug("child spawned");
 		}
 	}
 
-	for (int i = 0; i < child_count; i++) {
+	for (unsigned int i = 0; i < child_count; i++) {
 		pid_t child = wait(NULL);
 		if (child < 0) {
 			perror("wait() failed");	

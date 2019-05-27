@@ -22,10 +22,17 @@ start_tracing_session() {
 stop_tracing_session() {
 	lttng stop
 	lttng view
+
+	(set +o xtrace;
+		echo "process spawned    = $(lttng view | grep "process spawned"    | wc -l)";
+		echo "process terminated = $(lttng view | grep "process terminated" | wc -l)";
+		echo "child spawned    = $(lttng view | grep "child spawned"    | wc -l)";
+		echo "child terminated = $(lttng view | grep "child terminated" | wc -l)";
+	)
 }
 
 run_fork() {
-	echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload
+	echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload $@
 }
 
 make
@@ -33,7 +40,7 @@ make
 start_sessiond
 start_tracing_session
 
-run_fork > run1.log 2> run1.log
+run_fork $@ > run1.log 2> run1.log
 
 stop_tracing_session
 stop_sessiond
