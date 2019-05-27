@@ -10,7 +10,7 @@
 #endif
 
 #ifdef NO_LTTNG
-# define tracepoint(a,b,c,str) printf(str "\n")
+# define tracepoint(a,b,c,str) printf(str "\n"); fflush(stdout);
 #else
 # define TRACEPOINT_DEFINE
 # include "tp_provider.h"
