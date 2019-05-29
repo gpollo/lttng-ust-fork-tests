@@ -1,8 +1,11 @@
 #!/bin/bash
 
+ERROR_CODE=0
+
 assert_eq() {
 	if [[ ! $2 -eq $3 ]]; then
 		echo -e "$1 should be equal: expected=$2, got=$3"
+		ERROR_CODE=1
 	fi
 }
 
@@ -24,6 +27,7 @@ start_tracing_session() {
 }
 
 stop_tracing_session() {
+	#sleep 1
 	lttng stop
 
 	TRACE_DIRECTORY=$(lttng list test | grep -i "trace output" | sed "s/.* \(\/.*\)/\1/")
@@ -71,3 +75,4 @@ run_fork $@ > run1.log 2> run1.log
 stop_tracing_session
 stop_sessiond
 
+exit $ERROR_CODE
