@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <unistd.h>
 
-#include <queue.c>
+#include "queue.c"
 
 #ifndef DEFAULT_MAX_DEPTH
 # define DEFAULT_MAX_DEPTH 2
@@ -31,7 +32,7 @@ void sigint_handler(int signal)
 	printf("\rSIGINT received\n");
 }
 
-/* blocks all signal except SIGINT and SIGCHLD */
+/* blocks all signal except SIGINT */
 void setup_signals(void)
 {
 	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
@@ -46,11 +47,6 @@ void setup_signals(void)
 	}
 
 	if (sigdelset(&sigset, SIGINT) < 0) {
-		perror("sigdelset() failed");
-		_exit(1);
-	}
-
-	if (sigdelset(&sigset, SIGCHLD) < 0) {
 		perror("sigdelset() failed");
 		_exit(1);
 	}
@@ -81,7 +77,7 @@ unsigned int max_depth = DEFAULT_MAX_DEPTH;
 
 struct pid_queue child_pids = PID_QUEUE_INIT;
 
-void fork_loop(void)
+void spawn_childs(void)
 {
 	while (pid_queue_size(&child_pids) < max_depth) {
 		pid_t pid = fork();
@@ -95,7 +91,11 @@ void fork_loop(void)
 			tracepoint(fork_test, process_spawned, getpid());
 			setup_signals_child();
 			pid_queue_reset(&child_pids);
+
+			/* childs always exit after waiting for their childs */
 			do_exit = 1;
+
+			/* prevent a fork bomb by decrementing level count in child */
 			max_depth--;
 		} else {
 			tracepoint(fork_test, child_spawned, getpid());
@@ -103,24 +103,63 @@ void fork_loop(void)
 				perror("pid_queue_push");
 			}
 		}
-
-		usleep(100000);
 	}
+}
 
+pid_t wait_no_block(pid_t pid)
+{
+	return waitpid(pid, NULL, WNOHANG);
+}
+
+pid_t wait_block(pid_t pid)
+{
+	fprintf(stderr, "waitpid() may deadlock by waiting on pid=%u\n", pid);
+	pid_t ret_pid = waitpid(pid, NULL, 0);
+	fprintf(stderr, "waitpid() didn't deadlock by waiting on pid=%u\n", pid);
+	return ret_pid;
+}
+
+void wait_childs(void)
+{
 	do {
-		pid_t pid;
-		if (pid_queue_pop(&child_pids, &pid) < 0) {
+		pid_t child_pid, exit_pid;
+		if (pid_queue_pop(&child_pids, &child_pid) < 0) {
 			break;
 		}
 
-		pid_t child = wait(NULL);
-		if (child < 0) {
-			perror("wait() failed");	
+		/* we do our best to detect deadlock */
+		unsigned int try_count = 0;
+retry_waitpid:
+		if (try_count < 100) {
+			exit_pid = wait_no_block(child_pid);
+		} else {
+			/* having the deadlock will allow debugging with GDB */
+			exit_pid = wait_block(child_pid);
+		}
+
+		/* only WNOHANG returns 0 */
+		if (exit_pid == 0) {
+			try_count++;
+			sleep(1);
+			goto retry_waitpid;
+		} else if (exit_pid < 0) {
+			perror("waitpid() failed");
 			continue;
 		}
 
-		tracepoint(fork_test, child_terminated, getpid(), pid);
+		if (child_pid != exit_pid) {
+			fprintf(stderr, "waitpid() returned pid=%u, but "
+				"expected pid=%u\n", exit_pid, child_pid);
+		}
+
+		tracepoint(fork_test, child_terminated, getpid(), child_pid);
 	} while(do_exit);
+}
+
+void fork_loop(void)
+{
+	spawn_childs();
+	wait_childs();
 }
 
 int main(int argc, char** argv)
