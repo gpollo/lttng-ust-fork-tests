@@ -10,7 +10,7 @@
 #endif
 
 #ifdef NO_LTTNG
-# define tracepoint(a,b,c,str) printf(str "\n"); fflush(stdout);
+# define tracepoint(a,b,c) printf(#a ":" #b ", pid=%u\n", c); fflush(stdout);
 #else
 # define TRACEPOINT_DEFINE
 # include "tp_provider.h"
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	unsigned int child_count = thread_count;
 
 	getchar();
-	debug("process spawned");
+	tracepoint(fork_test, process_spawned, getpid());
 
 	for (unsigned int i = 1; i <= thread_count; i++) {
 		pid_t pid = fork();
@@ -69,10 +69,10 @@ int main(int argc, char** argv)
 		}
 
 		if (pid == 0) {
-			debug("process spawned");
+			tracepoint(fork_test, process_spawned, getpid());
 			child_count = thread_count - i;
 		} else {
-			debug("child spawned");
+			tracepoint(fork_test, child_spawned, getpid());
 		}
 	}
 
@@ -83,10 +83,10 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		debug("child terminated");
+		tracepoint(fork_test, child_terminated, getpid());
 	}
 
-	debug("process terminated");
+	tracepoint(fork_test, process_terminated, getpid());
 
 	return 0;
 }

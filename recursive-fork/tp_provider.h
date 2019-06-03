@@ -11,15 +11,30 @@
 
 TRACEPOINT_EVENT(
 	fork_test,
-	test,
-	TP_ARGS(
-		unsigned, pid,
-		char *, text
-	),
-	TP_FIELDS(
-		ctf_integer(int, pid, pid)
-		ctf_array_text(char, text, text, 40)
-	)
+	process_spawned,
+	TP_ARGS(unsigned, pid),
+	TP_FIELDS(ctf_integer(int, pid, pid))
+)
+
+TRACEPOINT_EVENT(
+	fork_test,
+	process_terminated,
+	TP_ARGS(unsigned, pid),
+	TP_FIELDS(ctf_integer(int, pid, pid))
+)
+
+TRACEPOINT_EVENT(
+	fork_test,
+	child_spawned,
+	TP_ARGS(unsigned, pid),
+	TP_FIELDS(ctf_integer(int, pid, pid))
+)
+
+TRACEPOINT_EVENT(
+	fork_test,
+	child_terminated,
+	TP_ARGS(unsigned, pid),
+	TP_FIELDS(ctf_integer(int, pid, pid))
 )
 
 #endif /* _TP_PROVIDER_H */

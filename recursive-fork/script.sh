@@ -1,5 +1,10 @@
 #!/bin/bash
 
+PROCESS_SPAWN_TP=fork_test:process_spawned
+PROCESS_TERMI_TP=fork_test:process_terminated
+CHILD_SPAWN_TP=fork_test:child_spawned
+CHILD_TERMI_TP=fork_test:child_terminated
+
 ERROR_CODE=0
 
 assert_eq() {
@@ -22,7 +27,10 @@ stop_sessiond() {
 start_tracing_session() {
 	lttng create test
 	lttng enable-channel --userspace --overwrite channel --buffers-pid
-	lttng enable-event -u fork_test:test -c channel
+	lttng enable-event -u "$PROCESS_SPAWN_TP" -c channel
+	lttng enable-event -u "$PROCESS_TERMI_TP" -c channel
+	lttng enable-event -u "$CHILD_SPAWN_TP" -c channel
+	lttng enable-event -u "$CHILD_TERMI_TP" -c channel
 	lttng start
 }
 
@@ -34,13 +42,13 @@ stop_tracing_session() {
 
 	babeltrace "$TRACE_DIRECTORY" > /dev/null 2> /dev/null
 	if [[ $? -eq 0 ]]; then
-		P_SPAWN=$(lttng view | grep "process spawned"    | wc -l)
-		P_TERMI=$(lttng view | grep "process terminated" | wc -l)
+		P_SPAWN=$(lttng view | grep "$PROCESS_SPAWN_TP"    | wc -l)
+		P_TERMI=$(lttng view | grep "$PROCESS_TERMI_TP" | wc -l)
 		echo -e "\tProcess spawned    = $P_SPAWN";
 		echo -e "\tProcess terminated = $P_TERMI";
 
-		C_SPAWN=$(lttng view | grep "child spawned"    | wc -l)
-		C_TERMI=$(lttng view | grep "child terminated" | wc -l)
+		C_SPAWN=$(lttng view | grep "$CHILD_SPAWN_TP"    | wc -l)
+		C_TERMI=$(lttng view | grep "$CHILD_TERMI_TP" | wc -l)
 		echo -e "\tChild spawned    = $C_SPAWN";
 		echo -e "\tChild terminated = $C_TERMI";
 	else
