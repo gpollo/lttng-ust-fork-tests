@@ -33,8 +33,14 @@ TRACEPOINT_EVENT(
 TRACEPOINT_EVENT(
 	fork_test,
 	child_terminated,
-	TP_ARGS(unsigned, pid),
-	TP_FIELDS(ctf_integer(int, pid, pid))
+	TP_ARGS(
+		unsigned, pid,
+		unsigned, child
+	),
+	TP_FIELDS(
+		ctf_integer(int, pid, pid)
+		ctf_integer(int, child, child)
+	)
 )
 
 #endif /* _TP_PROVIDER_H */

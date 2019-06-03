@@ -7,6 +7,10 @@ CHILD_TERMI_TP=fork_test:child_terminated
 
 ERROR_CODE=0
 
+if [[ ! -v SLEEP_COUNT ]]; then
+	SLEEP_COUT=1
+fi
+
 assert_eq() {
 	if [[ ! $2 -eq $3 ]]; then
 		echo -e "$1 should be equal: expected=$2, got=$3"
@@ -17,11 +21,13 @@ assert_eq() {
 start_sessiond() {
 	lttng-sessiond -vvv --verbose-consumer > sessiond.log 2> sessiond.log &
 	sleep 1
+
+	SESSIOND_PID=$!
 }
 
 stop_sessiond() {
-	kill -SIGINT $(jobs -p)
-	wait $(jobs -p)
+	kill -SIGINT "$SESSIOND_PID"
+	wait "$SESSIOND_PID"
 }
 
 start_tracing_session() {
@@ -64,13 +70,28 @@ stop_tracing_session() {
 	assert_eq "\t\tTrace count and process spawned" $TRACE_COUNT $P_SPAWN
 }
 
-run_fork() {
+start_fork() {
 	if [[ -n $USE_VALGRIND ]]; then
 		VALGRIND_OPTS="--log-file=run1.valgrind.log --leak-check=full --show-leak-kinds=all"
-		echo | LD_PRELOAD=liblttng-ust-fork.so valgrind $VALGRIND_OPTS ./fork-preload $@
+		echo | LD_PRELOAD=liblttng-ust-fork.so valgrind $VALGRIND_OPTS ./fork-preload $@ &
 	else
-		echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload $@
+		echo | LD_PRELOAD=liblttng-ust-fork.so ./fork-preload $@ &
 	fi
+
+	FORK_PID=$!
+}
+
+wait_fork() {
+	seq $SLEEP_COUNT | while read N; do
+		sleep 0.5
+		printf "."
+	done
+	echo
+}
+
+stop_fork() {
+	kill -SIGINT "$FORK_PID"
+	wait "$FORK_PID"
 }
 
 make
@@ -78,7 +99,9 @@ make
 start_sessiond
 start_tracing_session
 
-run_fork $@ > run1.log 2> run1.log
+start_fork $@ > run1.log 2> run1.log
+wait_fork
+stop_fork
 
 stop_tracing_session
 stop_sessiond
