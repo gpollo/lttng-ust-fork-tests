@@ -45,16 +45,17 @@ stop_tracing_session() {
 	lttng stop
 
 	TRACE_DIRECTORY=$(lttng list test | grep -i "trace output" | sed "s/.* \(\/.*\)/\1/")
+	TRACE_OUTPUT=babeltrace.output
 
-	babeltrace "$TRACE_DIRECTORY" > /dev/null 2> /dev/null
+	babeltrace "$TRACE_DIRECTORY" > $TRACE_OUTPUT
 	if [[ $? -eq 0 ]]; then
-		P_SPAWN=$(lttng view | grep "$PROCESS_SPAWN_TP"    | wc -l)
-		P_TERMI=$(lttng view | grep "$PROCESS_TERMI_TP" | wc -l)
+		P_SPAWN=$(cat $TRACE_OUTPUT | grep "$PROCESS_SPAWN_TP" | wc -l)
+		P_TERMI=$(cat $TRACE_OUTPUT | grep "$PROCESS_TERMI_TP" | wc -l)
 		echo -e "\tProcess spawned    = $P_SPAWN";
 		echo -e "\tProcess terminated = $P_TERMI";
 
-		C_SPAWN=$(lttng view | grep "$CHILD_SPAWN_TP"    | wc -l)
-		C_TERMI=$(lttng view | grep "$CHILD_TERMI_TP" | wc -l)
+		C_SPAWN=$(cat $TRACE_OUTPUT | grep "$CHILD_SPAWN_TP" | wc -l)
+		C_TERMI=$(cat $TRACE_OUTPUT | grep "$CHILD_TERMI_TP" | wc -l)
 		echo -e "\tChild spawned    = $C_SPAWN";
 		echo -e "\tChild terminated = $C_TERMI";
 	else
@@ -83,9 +84,10 @@ start_fork() {
 
 wait_fork() {
 	seq $SLEEP_COUNT | while read N; do
+		printf "\rSleeping %d/%d... " "$N" "$SLEEP_COUNT"
 		sleep 0.5
-		printf "."
 	done
+	printf "done\n"
 	echo
 }
 
