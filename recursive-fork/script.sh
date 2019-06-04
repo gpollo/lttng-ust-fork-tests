@@ -8,7 +8,7 @@ CHILD_TERMI_TP=fork_test:child_terminated
 ERROR_CODE=0
 
 if [[ ! -v SLEEP_COUNT ]]; then
-	SLEEP_COUT=1
+	SLEEP_COUNT=100
 fi
 
 assert_eq() {
