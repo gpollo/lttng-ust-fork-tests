@@ -10,12 +10,15 @@ TP_PROCESS_TERMI=fork_test:process_terminated
 TP_CHILD_SPAWN=fork_test:child_spawned
 TP_CHILD_TERMI=fork_test:child_terminated
 
+START_DIR=$(pwd)
+
+reset_dir() {
+	cd "$START_DIR"
+}
+
 setup_cleanup_handler() {
 	cleanup() {
-		echo "Exiting..."
-		stop_tracing_session
-		stop_sessiond
-		exit
+		echo "SIGINT trapped, exiting..."
 	}
 
 	trap cleanup INT
@@ -57,10 +60,10 @@ run_fork() {
 	fi
 
 	cd "$executable"
-	echo
+	echo -----------------------
 	./run.sh
-	echo
-	cd ..
+	echo -----------------------
+	reset_dir
 }
 
 make
