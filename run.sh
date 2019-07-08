@@ -11,14 +11,14 @@ TP_CHILD_SPAWN=fork_test:child_spawned
 TP_CHILD_TERMI=fork_test:child_terminated
 
 setup_cleanup_handler() {
-    cleanup() {
-        echo "Exiting..."
-        stop_tracing_session
-        stop_sessiond
-        exit
-    }
+	cleanup() {
+		echo "Exiting..."
+		stop_tracing_session
+		stop_sessiond
+		exit
+	}
 
-    trap cleanup INT
+	trap cleanup INT
 }
 
 start_sessiond() {
@@ -49,33 +49,21 @@ stop_tracing_session() {
 }
 
 run_fork() {
-    local executable=$1
-    local last_dir=$(pwd)
+	local executable=$1
 
-    if [[ ! -d $executable ]]; then
-        echo "Executable '$executable' directory not found"
-        return
-    fi
+	if [[ ! -d "$executable" ]]; then
+		echo "Executable '$executable' directory not found"
+		return
+	fi
 
-    cd $executable
-    make
-
-    if [[ ! -f $executable ]]; then
-        echo "Executable '$executable' file not found"
-        cd "$last_dir"
-        return
-    fi
-
-	export LTTNG_UST_REGISTER_TIMEOUT=-1
-	export LD_PRELOAD=liblttng-ust-fork.so
+	cd "$executable"
 	echo
-    ./$executable
+	./run.sh
 	echo
-	unset LTTNG_UST_REGISTER_TIMEOUT
-	unset LD_PRELOAD
-
-    cd "$last_dir"
+	cd ..
 }
+
+make
 
 start_sessiond
 start_tracing_session
