@@ -1,6 +1,6 @@
 CFLAGS=-I. -Wall -Wextra -pedantic -fno-builtin -g -O0
 
-EXECUTABLES=same-pid
+EXECUTABLES=simple-fork same-pid
 
 all:
 	for executable in $(EXECUTABLES); do $(MAKE) -C $$executable; done

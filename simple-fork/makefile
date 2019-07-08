@@ -1,12 +1,11 @@
-CFLAGS=-I. -Wall -Wextra -pedantic -fno-builtin -g -O0
+CFLAGS=-I../common/ -Wall -Wextra -pedantic -fno-builtin -g -O0
 
-EXECUTABLES=simple-fork
+EXECUTABLE=$(shell basename ${PWD})
 
-all: clean ${EXECUTABLES}
+all: clean ${EXECUTABLE}
 
-simple-fork: fork.c tp.c
+${EXECUTABLE}: main.c ../common/tp.c
 	gcc ${CFLAGS} $? -o $@ -ldl -llttng-ust
 
 clean:
-	rm -f ${EXECUTABLES}
-	rm -f *.log
+	rm -f ${EXECUTABLE}

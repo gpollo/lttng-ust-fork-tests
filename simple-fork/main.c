@@ -6,13 +6,11 @@
 #define TRACEPOINT_DEFINE
 #include "tp_provider.h"
 
-//#define tracepoint(namespace, event, ...) printf(#namespace ":" #event "\n"); fflush(stdin);
-
 int main()
 {
 	tracepoint(fork_test, process_spawned, getpid());
 
-	for(int i = 0; i < 3; i++) {
+	for(int i = 0; i < 1; i++) {
 		pid_t pid = fork();
 		if (pid < 0) {
 			perror("fork");
