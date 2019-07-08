@@ -20,7 +20,7 @@
 # include "tp_provider.h"
 #endif
 
-#define debug(str) tracepoint(fork_test, test, getpid(), str)
+static char* progname = NULL;
 
 unsigned int do_exit = 0;
 
@@ -29,7 +29,7 @@ void sigint_handler(int signal)
 	(void) signal;
 	do_exit = 1;
 
-	printf("\rSIGINT received\n");
+	printf("\r%s: SIGINT received\n", progname);
 }
 
 /* blocks all signal except SIGINT */
@@ -80,6 +80,7 @@ struct pid_queue child_pids = PID_QUEUE_INIT;
 void spawn_childs(void)
 {
 	while (pid_queue_size(&child_pids) < max_depth) {
+		setup_signals_child();
 		pid_t pid = fork();
 	
 		if (pid < 0) {
@@ -89,7 +90,6 @@ void spawn_childs(void)
 
 		if (pid == 0) {
 			tracepoint(fork_test, process_spawned, getpid());
-			setup_signals_child();
 			pid_queue_reset(&child_pids);
 
 			/* childs always exit after waiting for their childs */
@@ -98,7 +98,8 @@ void spawn_childs(void)
 			/* prevent a fork bomb by decrementing level count in child */
 			max_depth--;
 		} else {
-			tracepoint(fork_test, child_spawned, getpid());
+			setup_signals();
+			tracepoint(fork_test, child_spawned, getpid(), pid);
 			if (pid_queue_push(&child_pids, pid) < 0) {
 				perror("pid_queue_push");
 			}
@@ -164,6 +165,8 @@ void fork_loop(void)
 
 int main(int argc, char** argv)
 {
+	progname = argv[0];
+
 	if (argc > 1) {
 		if(sscanf(argv[1], "%u", &max_depth) == 0) {
 			fprintf(stderr, "sscanf: failed to parse maximum depth\n");
