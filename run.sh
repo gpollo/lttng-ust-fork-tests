@@ -50,18 +50,19 @@ stop_tracing_session() {
 
 run_fork() {
     local executable=$1
+    local last_dir=$(pwd)
 
     if [[ ! -d $executable ]]; then
         echo "Executable '$executable' directory not found"
         return
     fi
 
-    pushd $executable
+    cd $executable
     make
 
     if [[ ! -f $executable ]]; then
         echo "Executable '$executable' file not found"
-        popd
+        cd "$last_dir"
         return
     fi
 
@@ -73,7 +74,7 @@ run_fork() {
 	unset LTTNG_UST_REGISTER_TIMEOUT
 	unset LD_PRELOAD
 
-    popd
+    cd "$last_dir"
 }
 
 start_sessiond
