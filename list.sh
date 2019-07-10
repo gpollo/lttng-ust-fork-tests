@@ -1,33 +1,103 @@
 #!/bin/bash
 
-export BABELTRACE_TERM_COLOR=ALWAYS
+TP_PROC_SPAWN=fork_test:process_spawned
+TP_PROC_TERMI=fork_test:process_terminated
+TP_CHILD_SPAWN=fork_test:child_spawned
+TP_CHILD_TERMI=fork_test:child_terminated
+
+ERROR_COUNT_FILE=$(mktemp)
+
+init_error_count() {
+	echo 0 > "$ERROR_COUNT_FILE"
+}
+
+increment_error_count() {
+	local result
+	result=$(printf "%s+1\n" $(cat "$ERROR_COUNT_FILE") | bc)
+	echo "$result" > "$ERROR_COUNT_FILE"
+}
+
+get_error_count() {
+	cat "$ERROR_COUNT_FILE"
+}
+
+echo_error() {
+	local msg=$1
+
+	tput setaf 1
+	echo -e "error: $msg"
+	tput sgr0
+
+	increment_error_count
+}
 
 assert_eq() {
-	if [[ ! $2 -eq $3 ]]; then
-		echo -e "$1 should be equal: expected=$2, got=$3"
+	local msg=$1
+	local expected=$2
+	local got=$3
+
+	if [[ ! "$expected" -eq "$got" ]]; then
+		echo_error "$msg (expected=$expected, got=$got)"
+	else 
+		echo -e "ok: $msg"
 	fi
 }
 
+check_trace() {
+	local trace_dir=$1
+	local temp_file
+	local count
+	local p1
+	local p2
+	local c1
+	local c2
 
-find $1 -maxdepth 3 -mindepth 3 | sort | while read DIR; do 
-	echo "$DIR"
-	babeltrace "$DIR";
-
-	babeltrace "$DIR" > /dev/null 2> /dev/null
-	if [[ $? -eq 0 ]]; then
-
-		P_SPAWN=$(babeltrace "$DIR" | grep "process spawned"    | wc -l)
-		P_TERMI=$(babeltrace "$DIR" | grep "process terminated" | wc -l)
-
-		C_SPAWN=$(babeltrace "$DIR" | grep "child spawned"    | wc -l)
-		C_TERMI=$(babeltrace "$DIR" | grep "child terminated" | wc -l)
-
-		assert_eq "Process spawned/terminated" $P_SPAWN $P_TERMI
-		assert_eq "Child spawned/terminated" $C_SPAWN $C_TERMI
-	else
-		echo -e "Missing events in traces"
+	echo "$trace_dir"
+	if ! babeltrace "$trace_dir" > /dev/null 2> /dev/null; then
+		echo "babeltrace: couldn't read the trace"
+		return
 	fi
 
-	echo;
-done
+	temp_file=$(mktemp)
+	babeltrace "$trace_dir" > "$temp_file"
 
+	count=$(wc -l < "$temp_file")
+	p1=$(grep -c $TP_PROC_SPAWN < "$temp_file")
+	p2=$(grep -c $TP_PROC_TERMI < "$temp_file")
+	c1=$(grep -c $TP_CHILD_SPAWN < "$temp_file")
+	c2=$(grep -c $TP_CHILD_TERMI < "$temp_file")
+
+	if [[ "$count" == "1" ]]; then 
+		assert_eq "spawned process should be 1"    1 "$p1"
+		assert_eq "terminated process should be 0" 0 "$p2"
+		assert_eq "spawned child should be 0"      0 "$c1"
+		assert_eq "terminated child should be 0"   0 "$c2"
+	elif [[ "$count" == "2" ]]; then
+		assert_eq "spawned/terminated process should equal" "$p1" "$p2"
+		assert_eq "spawned/terminated child should equal"   "$c1" "$c2"
+	elif [[ "$count" == "3" ]]; then
+		assert_eq "spawned process should be 0"    0 "$p1"
+		assert_eq "terminated process should be 1" 1 "$p2"
+		assert_eq "spawned child should be 1"      1 "$c1"
+		assert_eq "terminated child should be 1"   1 "$c2"
+	else
+		echo_error "unexpected amount of events ($count)"
+	fi
+}
+
+check_session_traces() {
+	local session_dir=$1
+
+	find "$session_dir" -maxdepth 3 -mindepth 3 | sort | while read -r trace_dir; do
+		check_trace "$trace_dir"
+		echo
+	done
+}
+
+init_error_count
+check_session_traces "$@"
+
+
+tput setaf 3
+echo -e "There have been $(get_error_count) error(s)."
+tput sgr0
