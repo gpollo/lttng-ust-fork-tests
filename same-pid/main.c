@@ -13,16 +13,16 @@
 #define LAST_PID_FILE "/proc/sys/kernel/ns_last_pid"
 #define DESIRED_PID 15000
 #define PID_BUFFER_SIZE 10
-#define FORK_COUNT 2
 
-static char buffer[PID_BUFFER_SIZE];
+#define FORK_COUNT 500
 
 static
-int do_fork()
+int do_fork(void)
 {
 	int ret = 0;
 	int fd, size, written;
 	pid_t pid;
+	char buffer[PID_BUFFER_SIZE];
 
 	fd = open(LAST_PID_FILE, O_RDWR);
 	if (fd < 0) {
