@@ -7,7 +7,7 @@
 #define TRACEPOINT_DEFINE
 #include "tp_provider.h"
 
-#define FORK_COUNT 1000
+#define FORK_COUNT 100
 
 #define VA_ARGS(...) , ##__VA_ARGS__
 #define log(fmt, ...) 							\
@@ -16,7 +16,7 @@
 		ts = time(NULL); 					\
 		char* date = asctime(localtime(&ts)); 			\
 		date[strlen(date) - 1] = '\0';				\
-		printf("[%s] " fmt "\n", date VA_ARGS(__VA_ARGS__));	\
+		printf("[%u | %s] " fmt "\n", getpid(), date VA_ARGS(__VA_ARGS__));	\
 	} while (0);
 
 int main()
@@ -32,12 +32,12 @@ int main()
 
 		if (pid) {
 			tracepoint(fork_test, child_spawned, getpid(), pid);
-			log("waiting for child...");
+			log("#%d: waiting for child...", i);
 			pid_t child = wait(NULL);
 			if (child < 0) {
 				perror("wait");
 			}
-			log("done waiting for child %u", child);
+			log("#%d: done waiting for child %u", i, child);
 			tracepoint(fork_test, child_terminated, getpid(), pid);	
 		} else {
 			tracepoint(fork_test, process_spawned, getpid());

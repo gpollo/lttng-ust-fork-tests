@@ -14,7 +14,7 @@
 #define DESIRED_PID 15000
 #define PID_BUFFER_SIZE 10
 
-#define FORK_COUNT 500
+#define FORK_COUNT 10
 
 static
 int do_fork(void)

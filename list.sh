@@ -59,6 +59,7 @@ check_trace() {
 	fi
 
 	temp_file=$(mktemp)
+	babeltrace "$trace_dir"
 	babeltrace "$trace_dir" > "$temp_file"
 
 	count=$(wc -l < "$temp_file")
