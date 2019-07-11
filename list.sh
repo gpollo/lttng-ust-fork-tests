@@ -54,7 +54,7 @@ check_trace() {
 
 	echo "$trace_dir"
 	if ! babeltrace "$trace_dir" > /dev/null 2> /dev/null; then
-		echo "babeltrace: couldn't read the trace"
+		echo_error "babeltrace: couldn't read the trace"
 		return
 	fi
 
