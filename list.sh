@@ -13,7 +13,7 @@ init_error_count() {
 
 increment_error_count() {
 	local result
-	result=$(printf "%s+1\n" $(cat "$ERROR_COUNT_FILE") | bc)
+	result=$(printf "%s+1\n" "$(cat "$ERROR_COUNT_FILE")" | bc)
 	echo "$result" > "$ERROR_COUNT_FILE"
 }
 
