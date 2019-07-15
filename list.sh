@@ -45,7 +45,7 @@ assert_eq() {
 
 check_trace() {
 	local trace_dir=$1
-	local temp_file
+	local temp_file=$2
 	local count
 	local p1
 	local p2
@@ -58,7 +58,6 @@ check_trace() {
 		return
 	fi
 
-	temp_file=$(mktemp)
 	babeltrace "$trace_dir"
 	babeltrace "$trace_dir" > "$temp_file"
 
@@ -68,11 +67,23 @@ check_trace() {
 	c1=$(grep -c $TP_CHILD_SPAWN < "$temp_file")
 	c2=$(grep -c $TP_CHILD_TERMI < "$temp_file")
 
-	if [[ "$count" == "1" ]]; then 
-		assert_eq "spawned process should be 1"    1 "$p1"
-		assert_eq "terminated process should be 0" 0 "$p2"
-		assert_eq "spawned child should be 0"      0 "$c1"
-		assert_eq "terminated child should be 0"   0 "$c2"
+	if [[ "$count" == "0" ]]; then
+		assert_eq "there should be no event" 0 "$count"
+	elif [[ "$count" == "1" ]]; then
+		if [[ "$p1" == "1" ]]; then
+			assert_eq "spawned process should be 1"    1 "$p1"
+			assert_eq "terminated process should be 0" 0 "$p2"
+			assert_eq "spawned child should be 0"      0 "$c1"
+			assert_eq "terminated child should be 0"   0 "$c2"
+		elif [[ "$p2" == "1" ]]; then
+			assert_eq "spawned process should be 0"    0 "$p1"
+			assert_eq "terminated process should be 1" 1 "$p2"
+			assert_eq "spawned child should be 0"      0 "$c1"
+			assert_eq "terminated child should be 0"   0 "$c2"
+		else
+			# TODO: give a better error
+			echo_error "unexpected amount of events ($count)"
+		fi
 	elif [[ "$count" == "2" ]]; then
 		assert_eq "spawned/terminated process should equal" "$p1" "$p2"
 		assert_eq "spawned/terminated child should equal"   "$c1" "$c2"
@@ -88,9 +99,11 @@ check_trace() {
 
 check_session_traces() {
 	local session_dir=$1
+	local temp_file
 
+	temp_file=$(mktemp)
 	find "$session_dir" -maxdepth 3 -mindepth 3 | sort | while read -r trace_dir; do
-		check_trace "$trace_dir"
+		check_trace "$trace_dir" "$temp_file"
 		echo
 	done
 }
