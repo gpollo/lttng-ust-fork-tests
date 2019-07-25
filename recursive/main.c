@@ -9,6 +9,10 @@
 
 #include "queue.c"
 
+#ifndef FORK_COUNT
+# define FORK_COUNT 20
+#endif
+
 #ifndef MAX_DEPTH
 # define MAX_DEPTH 3
 #endif
@@ -184,7 +188,11 @@ int main(int argc, char** argv)
 	getchar();
 
 	tracepoint(fork_test, process_spawned, getpid());
-	while (!do_exit) {
+	for (unsigned i = 0; i < FORK_COUNT; i++) {
+		if (do_exit) {
+			break;
+		}
+
 		fork_loop();
 	}
 	tracepoint(fork_test, process_terminated, getpid());
