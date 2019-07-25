@@ -67,34 +67,8 @@ check_trace() {
 	c1=$(grep -c $TP_CHILD_SPAWN < "$temp_file")
 	c2=$(grep -c $TP_CHILD_TERMI < "$temp_file")
 
-	if [[ "$count" == "0" ]]; then
-		assert_eq "there should be no event" 0 "$count"
-	elif [[ "$count" == "1" ]]; then
-		if [[ "$p1" == "1" ]]; then
-			assert_eq "spawned process should be 1"    1 "$p1"
-			assert_eq "terminated process should be 0" 0 "$p2"
-			assert_eq "spawned child should be 0"      0 "$c1"
-			assert_eq "terminated child should be 0"   0 "$c2"
-		elif [[ "$p2" == "1" ]]; then
-			assert_eq "spawned process should be 0"    0 "$p1"
-			assert_eq "terminated process should be 1" 1 "$p2"
-			assert_eq "spawned child should be 0"      0 "$c1"
-			assert_eq "terminated child should be 0"   0 "$c2"
-		else
-			# TODO: give a better error
-			echo_error "unexpected amount of events ($count)"
-		fi
-	elif [[ "$count" == "2" ]]; then
-		assert_eq "spawned/terminated process should equal" "$p1" "$p2"
-		assert_eq "spawned/terminated child should equal"   "$c1" "$c2"
-	elif [[ "$count" == "3" ]]; then
-		assert_eq "spawned process should be 0"    0 "$p1"
-		assert_eq "terminated process should be 1" 1 "$p2"
-		assert_eq "spawned child should be 1"      1 "$c1"
-		assert_eq "terminated child should be 1"   1 "$c2"
-	else
-		echo_error "unexpected amount of events ($count)"
-	fi
+	assert_eq "process spawned/terminated should be equal" "$p1" "$p2"
+	assert_eq "child spawned/terminated should be equal" "$c1" "$c2"
 }
 
 check_session_traces() {
@@ -110,7 +84,6 @@ check_session_traces() {
 
 init_error_count
 check_session_traces "$@"
-
 
 tput setaf 3
 echo -e "There have been $(get_error_count) error(s)."
