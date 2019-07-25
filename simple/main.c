@@ -4,18 +4,18 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#define FORK_COUNT 1000
+
 #define TRACEPOINT_DEFINE
 #include "tp_provider.h"
 
-#define FORK_COUNT 100
-
 #define VA_ARGS(...) , ##__VA_ARGS__
-#define log(fmt, ...) 							\
-	do { 								\
-		time_t ts; 						\
-		ts = time(NULL); 					\
-		char* date = asctime(localtime(&ts)); 			\
-		date[strlen(date) - 1] = '\0';				\
+#define log(fmt, ...) 									\
+	do { 										\
+		time_t ts; 								\
+		ts = time(NULL); 							\
+		char* date = asctime(localtime(&ts)); 					\
+		date[strlen(date) - 1] = '\0';						\
 		printf("[%u | %s] " fmt "\n", getpid(), date VA_ARGS(__VA_ARGS__));	\
 	} while (0);
 
