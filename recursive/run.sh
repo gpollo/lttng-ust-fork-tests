@@ -1,35 +1,21 @@
 #!/bin/bash
 
 EXECUTABLE=$(basename "$PWD")
-EXECUTABLE_PID=""
-SLEEP_COUNT=5
 
-start_application() {
-	local depth=$1
-
+function run_bin() {
+	export LTTNG_UST_DEBUG=1
 	export LTTNG_UST_REGISTER_TIMEOUT=-1
+	export LTTNG_UST_ALLOW_BLOCKING=1
 	export LD_PRELOAD=liblttng-ust-fork.so
-	./$EXECUTABLE "$depth" &
+
+	./$EXECUTABLE 2> run.log > run.log
+
+	unset LTTNG_UST_DEBUG
 	unset LTTNG_UST_REGISTER_TIMEOUT
+	unset LTTNG_UST_ALLOW_BLOCKING
 	unset LD_PRELOAD
-
-	EXECUTABLE_PID=$!
 }
 
-wait_application() {
-	seq $SLEEP_COUNT | while read N; do
-		printf "\rSleeping %d/%d " "$N" "$SLEEP_COUNT"
-		sleep 1
-	done
-	echo
-}
+time run_bin
 
-stop_application() {
-	kill -SIGINT "$EXECUTABLE_PID"
-	wait "$EXECUTABLE_PID"
-}
-
-start_application
-wait_application
-stop_application
 
