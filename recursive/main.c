@@ -9,8 +9,8 @@
 
 #include "queue.c"
 
-#ifndef DEFAULT_MAX_DEPTH
-# define DEFAULT_MAX_DEPTH 2
+#ifndef MAX_DEPTH
+# define MAX_DEPTH 3
 #endif
 
 #ifdef NO_LTTNG
@@ -78,7 +78,7 @@ void setup_signals_child(void)
 }
 
 
-unsigned int max_depth = DEFAULT_MAX_DEPTH;
+unsigned int max_depth = MAX_DEPTH;
 
 struct pid_queue child_pids = PID_QUEUE_INIT;
 
