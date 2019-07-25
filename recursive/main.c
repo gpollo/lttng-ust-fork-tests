@@ -163,7 +163,7 @@ retry_waitpid:
 		}
 
 		tracepoint(fork_test, child_terminated, getpid(), child_pid);
-	} while(do_exit);
+	} while(1);
 }
 
 void fork_loop(void)
