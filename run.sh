@@ -73,6 +73,7 @@ start_tracing_session
 
 setup_cleanup_handler
 run_fork "$@"
+read
 
 stop_tracing_session
 stop_sessiond
