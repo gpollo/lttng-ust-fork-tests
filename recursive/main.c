@@ -185,7 +185,6 @@ int main(int argc, char** argv)
 	}
 
 	setup_signals();
-	getchar();
 
 	tracepoint(fork_test, process_spawned, getpid());
 	for (unsigned i = 0; i < FORK_COUNT; i++) {
