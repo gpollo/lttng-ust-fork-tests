@@ -21,6 +21,7 @@
 #endif
 
 static char* progname = NULL;
+static pid_t main_process;
 
 unsigned int do_exit = 0;
 
@@ -35,6 +36,10 @@ void sigint_handler(int signal)
 /* blocks all signal except SIGINT */
 void setup_signals(void)
 {
+	if (main_process != getpid()) {
+		return;
+	}
+
 	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
 		perror("signal() failed");
 		_exit(1);
@@ -166,6 +171,7 @@ void fork_loop(void)
 int main(int argc, char** argv)
 {
 	progname = argv[0];
+	main_process = getpid();
 
 	if (argc > 1) {
 		if(sscanf(argv[1], "%u", &max_depth) == 0) {
