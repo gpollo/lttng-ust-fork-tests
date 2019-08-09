@@ -1,4 +1,4 @@
-CFLAGS=-I../common/ -lpthread -ldl -Wall -Wextra -pedantic -fno-builtin -g -O0
+override CFLAGS+=-I../common/ -lpthread -ldl
 
 EXECUTABLES=                     \
 	$(shell basename ${PWD}) \
@@ -7,10 +7,10 @@ EXECUTABLES=                     \
 all: clean ${EXECUTABLES}
 
 $(shell basename ${PWD}): main.c ../common/tp.c
-	gcc ${CFLAGS} $? -o $@ -llttng-ust
+	gcc $? -o $@ -llttng-ust ${CFLAGS}
 
 $(shell basename ${PWD})-no-lttng: main.c
-	gcc ${CFLAGS} $? -o $@ -DNO_LTTNG
+	gcc $? -o $@ -DNO_LTTNG ${CFLAGS}
 
 clean:
 	rm -f ${EXECUTABLES}

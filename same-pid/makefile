@@ -1,4 +1,4 @@
-CFLAGS=-I../common/ -Wall -Wextra -pedantic -fno-builtin -g -O0
+override CFLAGS+=-I../common/ -Wall -Wextra -pedantic -fno-builtin -g -O0
 
 EXECUTABLE=$(shell basename ${PWD})
 

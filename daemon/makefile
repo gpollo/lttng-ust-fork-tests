@@ -1,11 +1,11 @@
-CFLAGS=-I../common/ -Wall -Wextra -pedantic -fno-builtin -g -O0
+override CFLAGS+=-I../common/
 
 EXECUTABLE=$(shell basename ${PWD})
 
 all: clean ${EXECUTABLE}
 
 ${EXECUTABLE}: main.c ../common/tp.c
-	gcc ${CFLAGS} $? -o $@ -ldl -llttng-ust
+	gcc $? -o $@ -ldl -llttng-ust ${CFLAGS}
 
 clean:
 	rm -f ${EXECUTABLE}

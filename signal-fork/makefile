@@ -1,14 +1,14 @@
-CFLAGS=-lpthread -ldl -I. -Wall -Wextra -pedantic -fno-builtin -g -O0
+override CFLAGS+=-lpthread -ldl
 
 EXECUTABLES=fork fork-preload
 
 all: clean ${EXECUTABLES}
 
 fork: fork.c
-	gcc ${CFLAGS} $? -o $@ -DNO_LTTNG
+	gcc $? -o $@ -DNO_LTTNG ${CFLAGS}
 
 fork-preload: fork.c tp.c
-	gcc ${CFLAGS} $? -o $@ -llttng-ust -llttng-ust-fork
+	gcc $? -o $@ -llttng-ust -llttng-ust-fork ${CFLAGS}
 
 clean:
 	rm -f ${EXECUTABLES}
